@@ -8,6 +8,8 @@ EC2_MACHINE_IP_L=( "ec2-18-212-189-174.compute-1.amazonaws.com" "54.89.173.144" 
 
 GCLOUD_VM_IP=104.197.7.199
 
+ORBIT_SB=3
+
 if [ $1  = 'ssh' ]; then
   if [ $2 = 'd' ]; then
     if [ -z "$3" ]; then
@@ -33,29 +35,23 @@ if [ $1  = 'ssh' ]; then
   elif [ $2 = 'm' ]; then
     # ssh -A -t mfa51@spring.rutgers.edu ssh mfa51@amarel.hpc.rutgers.edu
     # ssh mfa51@amarel.hpc.rutgers.edu
-    ssh -A -t mehmet@console.sb1.orbit-lab.org ssh mfa51@amarel.hpc.rutgers.edu
+    ssh -A -t mehmet@console.sb$ORBIT_SB.orbit-lab.org ssh mfa51@amarel.hpc.rutgers.edu
   elif [ $2 = 'o' ]; then
-    ssh -Y mehmet@console.sb1.orbit-lab.org
-    # ssh -Y mehmet@console.sb2.orbit-lab.org
-    # ssh -Y mehmet@console.sb4.orbit-lab.org
-  elif [ $2 = 'o2' ]; then
-    ssh -Y mehmet@console.sb2.orbit-lab.org
-  elif [ $2 = 'o5' ]; then
-    ssh -Y mehmet@console.sb5.orbit-lab.org
+    ssh -Y mehmet@console.sb$ORBIT_SB.orbit-lab.org
   elif [ $2 = 'g' ]; then
     ssh -Y mehmet@$GCLOUD_VM_IP
   fi
 elif [ $1  = 'sshf' ]; then
   NODE_IP=10.11.1.1
   PORT=30011 # 5001
-  # ssh -L $PORT:$NODE_IP:$PORT mehmet@console.sb1.orbit-lab.org
+  # ssh -L $PORT:$NODE_IP:$PORT mehmet@console.sb$ORBIT_SB.orbit-lab.org
 
   SERVER_IP=192.168.49.2 # 10.14.1.3
   PORT_MID=5002
-  # ssh -L $PORT:localhost:$PORT mehmet@console.sb1.orbit-lab.org ssh -L $PORT:$SERVER_IP:$PORT root@node1-1
-  ssh -v -L $PORT:localhost:$PORT_MID mehmet@console.sb1.orbit-lab.org ssh -L $PORT_MID:$SERVER_IP:$PORT root@node1-1
+  # ssh -L $PORT:localhost:$PORT mehmet@console.sb$ORBIT_SB.orbit-lab.org ssh -L $PORT:$SERVER_IP:$PORT root@node1-1
+  ssh -v -L $PORT:localhost:$PORT_MID mehmet@console.sb$ORBIT_SB.orbit-lab.org ssh -L $PORT_MID:$SERVER_IP:$PORT root@node1-1
 
-  # ssh -L $PORT:localhost:$PORT mehmet@console.sb1.orbit-lab.org
+  # ssh -L $PORT:localhost:$PORT mehmet@console.sb$ORBIT_SB.orbit-lab.org
 
   # ssh -L $PORT:$SERVER_IP:$PORT root@$NODE
 elif [ $1  = 'fr' ]; then
@@ -69,12 +65,40 @@ elif [ $1  = 'fr' ]; then
     # scp mfa51@amarel.hpc.rutgers.edu:~/deep-scheduler/loglearning_persist/eval_wmpi_redsmall.out ~/Desktop
     # scp mfa51@amarel.hpc.rutgers.edu:~/.emacs.d/init.el ~/Desktop
 
-    jump_host="mehmet@console.sb1.orbit-lab.org"
+    jump_host="mehmet@console.sb"$ORBIT_SB".orbit-lab.org"
     host="mfa51@amarel.hpc.rutgers.edu"
+    remote_path="/home/mfa51/edge-load-balance"
+
     local_path="/Users/mehmet/Desktop/imgs"
-    destination_path="/home/mfa51/edge-flow-control/sim/*.png"
-    # scp -o ProxyCommand="ssh $jump_host nc $host 2222" $host:$destination_path $local_path
-    scp -o ProxyCommand="ssh -W %h:%p $jump_host" $host:$destination_path $local_path
+    # scp -o ProxyCommand="ssh $jump_host nc $host 2222" $host:$remote_path $local_path
+    # scp -o ProxyCommand="ssh -W %h:%p $jump_host" $host:$remote_path"/sim_podc/*.png" $local_path
+    # scp -o ProxyCommand="ssh -W %h:%p $jump_host" $host:$remote_path"/sim_ts/*.png" $local_path
+    # scp -o ProxyCommand="ssh -W %h:%p $jump_host" $host:$remote_path"/*.png" $local_path
+
+    local_path="/Users/mehmet/Desktop/edge-load-balance"
+    scp_ () {
+      folder=$1
+      wildcard=$2
+      scp -o ProxyCommand="ssh -W %h:%p $jump_host" $host:$remote_path/$folder/$wildcard $local_path/$folder
+    }
+
+    scp_ 'sim_podc' 'ro_ET_l*'
+    scp_ 'sim_ts' 'ro_ET_l*'
+    scp_ 'sim_rr' 'ro_ET_l*'
+
+    scp_ 'sim_podc' 'req_info_m_l_c0*'
+    scp_ 'sim_podc' 'req_info_m_l_c5*'
+    scp_ 'sim_ts' 'req_info_m_l_c0*'
+    scp_ 'sim_ts' 'req_info_m_l_c5*'
+    scp_ 'sim_rr' 'req_info_m_l_c0*'
+    scp_ 'sim_rr' 'req_info_m_l_c5*'
+
+    scp_ 'sim_podc' 'epoch_num_req_l_cl0*'
+    scp_ 'sim_podc' 'epoch_num_req_l_cl5*'
+    scp_ 'sim_ts' 'epoch_num_req_l_cl0*'
+    scp_ 'sim_ts' 'epoch_num_req_l_cl5*'
+    scp_ 'sim_rr' 'epoch_num_req_l_cl0*'
+    scp_ 'sim_rr' 'epoch_num_req_l_cl*'
   elif [ $2 = 'g' ]; then
     scp mehmet@$GCLOUD_VM_IP:~/.emacs.d/init.el ~/Desktop
   fi
@@ -96,7 +120,7 @@ elif [ $1  = 'fs' ]; then
 
     # sshfs $REMOTE_DIR/$FOLDER $LOCAL_DIR/$FOLDER
 
-    ssh -f mehmet@console.sb1.orbit-lab.org -L 2222:amarel.hpc.rutgers.edu:22 -N
+    ssh -f mehmet@console.sb$ORBIT_SB.orbit-lab.org -L 2222:amarel.hpc.rutgers.edu:22 -N
     sshfs -p 2222 mfa51@127.0.0.1:/home/mfa51/$FOLDER $LOCAL_DIR/$FOLDER
   fi
 elif [ $1  = 'um' ]; then
@@ -115,9 +139,9 @@ elif [ $1  = 'tr' ]; then
     DIR=.emacs.d/themes # .emacs.d/elpa # .emacs.d/lisp
     scp -r ~/$DIR mehmet@$GCLOUD_VM_IP:~/.emacs.d
   elif [ $2  = 'o' ]; then
-    # scp -r ~/.emacs.d/* mehmet@console.sb1.orbit-lab.org:~/.emacs.d
-    # scp ~/.emacs.d/init.el mehmet@console.sb1.orbit-lab.org:~/.emacs.d
-    scp -r ~/.emacs.d/elpa mehmet@console.sb1.orbit-lab.org:~/.emacs.d
+    # scp -r ~/.emacs.d/* mehmet@console.sb$ORBIT_SB.orbit-lab.org:~/.emacs.d
+    # scp ~/.emacs.d/init.el mehmet@console.sb$ORBIT_SB.orbit-lab.org:~/.emacs.d
+    scp -r ~/.emacs.d/elpa mehmet@console.sb$ORBIT_SB.orbit-lab.org:~/.emacs.d
   fi
 else
   echo "Argument did not match !"
