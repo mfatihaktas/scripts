@@ -1,0 +1,178 @@
+# # Auto-parse the `.bash` Config Files by `source`-ing them
+# for custom_config_file in ${HOME}/.bashrc.d/*.bash; do
+#   source "$custom_config_file"
+# done
+# unset -v custom_config_file
+
+# # Brew Installs
+# export PATH="/usr/local/opt/ruby/bin:$PATH"
+# export PATH="/usr/local/opt/curl/bin:$PATH"
+# export PATH="/usr/local/opt/sqlite/bin:$PATH"
+export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+
+export BASH_CONF="bashrc"
+
+alias ls="ls -lGH"
+# alias e="TERM=xterm-16color emacs"
+alias e="emacs"
+alias k="kubectl"
+alias m="minikube"
+alias t="terraform"
+alias d="docker"
+alias dc="docker-compose"
+alias gs="gsutil"
+
+gr() { grep --color=always -irn -I "$1" * ;}
+grf() { grep --color=always -irn -I "$1" --include="$2" * ;}
+ff() { find . -name "*$1*" ;}
+eff() { e `ff $@` ;}
+
+ssh-mehmet-docker() { gcloud compute ssh mehmet_overjet_ai@mehmet-docker ;}
+# gcloud compute config-ssh
+# ssh mehmet_overjet_ai@mehmet-docker.us-east1-b.machinelearning-research
+
+sshfs-mehmet-docker()
+{(
+  sshfs -o IdentityFile=~/.ssh/google_compute_engine \
+        mehmet_overjet_ai@mehmet-docker.us-east1-b.machinelearning-research:~/Desktop/mounted_folder \
+        ~/Desktop/mounted_folder
+)}
+
+# | xargs -I '{}' scp '{}' server
+scp-from-gcp()
+{(
+  local FROM_DIR="~/tn_classification"
+  local TO_DIR="/Users/mehmet/Desktop/tn_classification"
+  
+  gcloud compute ssh mehmet_overjet_ai@mehmet-1 \
+	 --command "cd tn_classification; git diff --name-only --diff-filter=AM" \
+    | xargs -I '{}' \
+	    gcloud compute scp --zone=us-east1-b mehmet_overjet_ai@mehmet-1:$FROM_DIR/'{}' $TO_DIR
+)}
+
+## Upon any 403 error
+## If err persists, in IAM I try to access something which does not exist, or I don't have permissions for
+## This is where it is good to reach out for help and share what I don't have access for.
+gc-auth() { gcloud auth login ;}
+gc-auth-2() { gcloud auth application-default login ;}
+gc-auth-docker() { gcloud auth configure-docker ;}
+
+# gcloud config list
+# gcloud config configurations activate default
+# gcloud config set project <PROJECT_ID>
+# echo $GOOGLE_CLOUD_PROJECT
+ggc-ml-dev()
+{(
+  gcloud container clusters get-credentials machinelearning-models-dev --region=us-east1 --project=machinelearning-research
+)}
+
+ggc-ins-dev()
+{(
+  gcloud container clusters get-credentials insuranceanalytics-models-dev --region=us-east1 --project=insuranceanalytics-dev
+)}
+
+ggc-caries()
+{(
+  gcloud container clusters get-credentials ml-models --region=us-east1-b --project=cariesdetection
+)}
+
+t-check()
+{
+  (
+    set -e
+    echo "> t validate (begin)"
+    t validate
+    echo "> t validate (end)"
+
+    echo "> tflint (begin)"
+    tflint
+    echo "> tflint (end)"
+
+    echo "> t plan (begin)"
+    t plan
+    echo "> t plan (end)"
+  )
+}
+
+t-watch() { fd '\.(tf|tfvars)' | entr t-check ;}
+
+tc() { rm -r .terraform* ;}
+ti() { t init ;}
+tv() { t validate ;}
+tt() { t test ;}
+tp() { t plan -var-file=`fd -e tfvars` ;}
+tpf() { t plan -var-file=`fd -e tfvars` -refresh=false ;}
+tpt() { t plan -var-file=`fd -e tfvars` -target="$1" ;}
+ta() { t apply -var-file=`fd -e tfvars` ;}
+tar() { t apply -var-file=`fd -e tfvars` --replace ;}
+taf() { t apply -var-file=`fd -e tfvars` -refresh=false ;}
+tat() { t apply -var-file=`fd -e tfvars` --target "$1" ;}
+tatr() { t apply -var-file=`fd -e tfvars` --target "$1" --replace ;}
+# tat module.ml_cluster_and_vpc.google_container_cluster.ml_cluster
+# tat module.ml_cluster_and_vpc.google_container_node_pool.online_inference
+# tat module.ml_cluster_and_vpc.google_artifact_registry_repository_iam_member.artifact_registry_iam
+tr() { t refresh -var-file=`fd -e tfvars` ;}
+td() { t destroy -var-file=`fd -e tfvars` ;}
+tdt() { t destroy -var-file=`fd -e tfvars` --target "$1" ;}
+tu() { t force-unlock -force "$1" ;}
+tim() { t import -var-file=`fd -e tfvars` "$1" "$2" ;}
+# ti google_artifact_registry_repository.docker projects/engineering-artifacts-dev/locations/us-east1/repositories/docker
+
+# t taint module.ml_cluster_and_vpc.google_container_node_pool.online_inference
+# t taint "module.ml_algorithm_deployments[\"segmentation-lightning-crown-test\"].kubernetes_deployment.algorithm_deployment"
+
+# Available beyond Terraform v0.15.2
+# t apply -var-file=`fd -e tfvars` -replace="module.ml_cluster_and_vpc.google_container_node_pool.online_inference"
+
+kasa() { kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-stackdriver/master/custom-metrics-stackdriver-adapter/deploy/production/adapter_new_resource_model.yaml ;}
+# k delete --all deployments --namespace=ml-models-dev
+
+format-code()
+{
+  (
+    isort --skip .direnv/** .
+    black --exclude=".direnv/*" .
+    flake8 --exclude=".direnv/*" .
+  )
+}
+
+# Query to debug keda-operator
+# textPayload:scaleexecutor
+# textPayload:triggerAuth
+
+# direnv allow
+# pip install --upgrade pip
+# pip install poetry
+# poetry install
+
+## Ref:
+## - https://medium.com/lambda-automotive/python-poetry-finally-easy-build-and-deploy-packages-e1e84c23401f
+## - https://towardsdatascience.com/how-to-effortlessly-publish-your-python-package-to-pypi-using-poetry-44b305362f9f
+# poetry new project_name
+# 
+# poetry add python-package
+# poetry install
+# poetry update
+# poetry build
+# poetry config repositories.test http://localhost
+# poetry publish -r test
+
+# docker image tag ${IMAGE ID} ${REPOSITORY}:${TAG}
+
+# gcloud beta compute ssh mehmet@gke-machinelearning--online-inference-0c4132c8-4xjr --troubleshoot --tunnel-through-iap
+# gcloud projects get-iam-policy machinelearning-research \
+# --filter="serviceAccount" \
+# --flatten="bindings[].members" \
+# --format="value(bindings.members.split(':').slice(1:).flatten())"
+# gcloud projects get-iam-policy engineering-artifacts-dev  \
+# --flatten="bindings[].members" \
+# --format="table(bindings.role)" \
+# --filter="bindings.members:engineering-artifacts-dev@appspot.gserviceaccount.com"
+# gcloud asset search-all-iam-policies --scope=projects/engineering-artifacts-dev
+# gcloud asset search-all-iam-policies --scope=projects/my-project --flatten='policy.bindings[].members[]' --format='csv(resource, assetType, policy.bindings.members, policy.bindings.role)'
+
+# 1. Secret Manager/mongo_db_read_access/Actions/View secret value
+# 2. Ctrl+f "insurance_003"
+# 3. Copy value mongodb+srv://readAnyDatabase:VZHa7wJjhGpaBfa5@cluster-guardian.9hqq3.mongodb.net/guardian?retryWrites=true&w=majority
+# Filter: {claimId: /01956C342/}
+# gsutil cat gs://insurance_003_redacted/images/01956C342184409402/01956C342_184409402_2-pg03.jpg | imgcat
