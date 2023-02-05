@@ -19,15 +19,16 @@
     "Red Component" : 0.73333334922790527,
     "Blue Component" : 0.73333334922790527
   },
-  "Ansi 8 Color" : {
-    "Green Component" : 0.33333333333333331,
-    "Red Component" : 0.33333333333333331,
-    "Blue Component" : 0.33333333333333331
-  },
+  "Draw Powerline Glyphs" : true,
   "Bold Color" : {
     "Green Component" : 0.90237069129943848,
     "Red Component" : 0.90237069129943848,
     "Blue Component" : 0.90237069129943848
+  },
+  "Ansi 8 Color" : {
+    "Green Component" : 0.33333333333333331,
+    "Red Component" : 0.33333333333333331,
+    "Blue Component" : 0.33333333333333331
   },
   "Ansi 9 Color" : {
     "Green Component" : 0.33333333333333331,
@@ -35,9 +36,9 @@
     "Blue Component" : 0.33333333333333331
   },
   "Horizontal Spacing" : 1,
-  "Right Option Key Sends" : 2,
   "Rows" : 25,
   "Default Bookmark" : "No",
+  "Right Option Key Sends" : 2,
   "Cursor Guide Color" : {
     "Red Component" : 0.70213186740875244,
     "Color Space" : "sRGB",
@@ -77,10 +78,10 @@
   "Sync Title" : false,
   "Prompt Before Closing 2" : false,
   "BM Growl" : true,
+  "Mouse Reporting" : true,
   "Command" : "",
   "Description" : "Default",
   "Disable Window Resizing" : true,
-  "Mouse Reporting" : true,
   "Screen" : -1,
   "Selection Color" : {
     "Green Component" : 0.27843138575553894,
@@ -97,7 +98,7 @@
   },
   "Custom Command" : "No",
   "ASCII Anti Aliased" : true,
-  "Non Ascii Font" : "Monaco 12",
+  "Non Ascii Font" : "HackNerdFontCompleteM-Regular 12",
   "Vertical Spacing" : 1,
   "Use Bold Font" : true,
   "Option Key Sends" : 2,
@@ -367,7 +368,7 @@
   },
   "Window Type" : 0,
   "Cursor Boost" : 0.029545454545454548,
-  "Initial Text" : "source ~\/.bashrc ",
+  "Initial Text" : "",
   "Background Image Location" : "",
   "Blur" : false,
   "Badge Color" : {
@@ -434,8 +435,8 @@
     "Red Component" : 0.54509803921568623,
     "Blue Component" : 0.99215686274509807
   },
-  "Normal Font" : "Monaco 14",
-  "Custom Directory" : "No",
+  "Normal Font" : "HackNerdFontComplete-Regular 14",
+  "Custom Directory" : "Recycle",
   "Ansi 0 Color" : {
     "Green Component" : 0,
     "Red Component" : 0,
