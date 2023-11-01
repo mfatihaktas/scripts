@@ -1,6 +1,7 @@
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-source /usr/local/opt/spaceship/spaceship.zsh
+# Ref: https://github.com/spaceship-prompt/spaceship-prompt#-installation
+source "/opt/homebrew/opt/spaceship/spaceship.zsh"
 
 eval "$(direnv hook zsh)"
 
@@ -44,3 +45,23 @@ alias csshfs="sshfs -o sshfs_debug -o ssh_command='ssh -p 2222 -o StrictHostKeyC
 # alias csshfs="sshfs -o sshfs_debug -o ssh_command='ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null vscode@localhost' vscode@localhost:/workspaces/fw-prototype ~/Desktop/mount"
 # sshfs -o ssh_command='ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null vscode@localhost' vscode@localhost:/workspaces/fw-prototype ~/Desktop/mount
 # sshfs -o sshfs_debug -p 2222 vscode@localhost:/workspaces/fw-prototype ~/Desktop/mount
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/Users/mehmet/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/Users/mehmet/miniconda3/etc/profile.d/conda.sh" ]; then
+	. "/Users/mehmet/miniconda3/etc/profile.d/conda.sh"
+    else
+	# export PATH="/Users/mehmet/miniconda3/bin:$PATH"
+	export PATH="$PATH:/Users/mehmet/miniconda3/bin"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+alias pyflink="pyflink-shell.sh local"
+
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh

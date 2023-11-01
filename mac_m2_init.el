@@ -5,15 +5,14 @@
 
 (setq straight-disable-native-compile t)
 
-;; cd ~/.emacs.d/; git clone https://github.com/radian-software/straight.el.git
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 6))
+      (bootstrap-version 5))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
 	(url-retrieve-synchronously
-	 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+	 "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
 	 'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
@@ -49,8 +48,8 @@
 ;; ----------------------------    THEME     -------------------------------------------
 ;; -------------------------------------------------------------------------------------
 ;; (load-theme 'wombat)
-;; (load-theme 'spacemacs-light t)
-(load-theme 'spacemacs-dark t)
+(load-theme 'spacemacs-light t)
+;; (load-theme 'spacemacs-dark t)
 ;; (load-theme 'zenburn t)
 ;; (load-theme 'twilight-bright)
 ;; (load-theme 'autumn-light)
@@ -124,9 +123,11 @@
 
 ;; refresh buffers when any file change
 (global-auto-revert-mode t)
+;; Ref: https://emacs.stackexchange.com/questions/9338/auto-refresh-files-when-using-tramp
+;; (auto-revert-remote-files t)
 
 ;; track recently opened file
-(recentf-mode t)
+;; (recentf-mode t)  ;; Caused "Method ‘ghcs’ is not known." error on Mac with Intel.
 (global-set-key (kbd "C-x C-r") 'recentf-open-files)
 (setq recentf-max-saved-items 1000)
 (setq recentf-max-menu-items 50)
@@ -231,19 +232,27 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(auto-revert-remote-files t)
  '(custom-safe-themes
    '("1a1266e25ed97448bbe80f246f53372d4b914d30802711abfda7afcbf2f7b3ec" "859ff6182156e4bea960c2c7678f8b3da23961046b855e805f0f5a5d09b92658" "aa6638f0cd2ba2c68be03220ea73495116dc6f0b625405ede34087c1babb71ae" "76b4632612953d1a8976d983c4fdf5c3af92d216e2f87ce2b0726a1f37606158" "a7760b614d51ba59af9bd4a87014e688cdcb7df36e971e21abc23cc7ad0cdfbc" default))
  '(flycheck-flake8-maximum-line-length 200)
- '(flycheck-flake8rc "pyproject.toml")
+ ;; '(flycheck-flake8rc "pyproject.toml")
  '(git-commit-summary-max-length 100)
+ '(minimap-minimum-width 30)
+ '(minimap-mode t)
  '(package-selected-packages
    '(undo-fu silkworm-theme smooth-scroll ## find-file-in-project helm-ag dumb-jump helm))
- '(warning-suppress-types '((magit))))
+ '(warning-suppress-log-types '((emacs) (magit) (magit)))
+ '(warning-suppress-types '((magit) (magit))))
 
 ;; (load-theme 'silkworm)
 
 ;; (projectile-global-mode)
 ;; (setq projectile-enable-caching t)
+
+;; Added to speed up TRAMP
+;; Ref: https://emacs.stackexchange.com/questions/17543/tramp-mode-is-much-slower-than-using-terminal-to-ssh
+(setq projectile-mode-line "Projectile")
 
 ;; (setq x-select-enable-clipboard t)
 ;; (setq interprogram-paste-function 'x-cut-buffer-or-selection-value)
@@ -252,13 +261,8 @@
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; load the packaged named xyz.
 (load "highlight-symbol") ;; best not to include the ending “.el” or “.elc”
-;; (load "move-text")
+(load "move-text")
 
-;; (custom-set-variables
-;;  '(highlight-symbol-colors
-;;    (quote
-;;     ("DeepPink" "cyan" "DarkRed" "DarkBlue" "tomato" "magenta1" )))
-;;  )
 
 (defun reload-dotemacs ()
   (interactive)
@@ -291,18 +295,29 @@
 (require 'tramp)
 (setq tramp-default-method "sshx")
 (setq tramp-local-host-regexp nil)
+;; (setq explicit-shell-file-name "/bin/bash")
+;; (setq tramp-default-remote-shell "/bin/bash")
 
 (add-to-list 'tramp-connection-properties
-	     (list (regexp-quote "/sshx:user@host:")
-		   "remote-shell" "/bin/bash"))
+	  (list (regexp-quote "/sshx:user@host:")
+		"remote-shell" "/bin/bash"))
 
-;; (setq tramp-verbose 8)
-;; (add-to-list 'tramp-default-proxies-alist
-;;              '("ORBIT" nil "/ssh:mehmet@console.sb1.orbit-lab.org:"))
+;; (add-to-list 'tramp-connection-properties
+;;	  (list (regexp-quote "/sshx:user@host:")
+;;		"remote-shell" "/usr/bin/zsh"))
 
-;; (defun ssh-amarel ()
-;;   (interactive)
-;;   (find-file "/ssh:mehmet@console.sb1.orbit-lab.org|ssh:mfa51@amarel.hpc.rutgers.edu:/home/mfa51"))
+;; ;; https://emacs.stackexchange.com/questions/47424/tramp-gcloud-compute-ssh-not-working
+;; (add-to-list 'tramp-methods
+;;           '("gcssh"
+;;            (tramp-login-program        "gcloud compute ssh")
+;;            (tramp-login-args           (("%h")))
+;;            (tramp-async-args           (("-q")))
+;;            (tramp-remote-shell         "/bin/sh")
+;;            (tramp-remote-shell-args    ("-c"))
+;;            (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
+;;                                         ("-o" "UserKnownHostsFile=/dev/null")
+;;                                         ("-o" "StrictHostKeyChecking=no")))
+;;            (tramp-default-port         22)))
 
 ;; Note: Notice `sshx`!
 ;; Ref:
@@ -311,19 +326,6 @@
 (defun ssh-amarel ()
   (interactive)
   (find-file "/sshx:mfa51@amarel.hpc.rutgers.edu:/home/mfa51"))
-
-;; https://emacs.stackexchange.com/questions/47424/tramp-gcloud-compute-ssh-not-working
-(add-to-list 'tramp-methods
-	     '("gcssh"
-	      (tramp-login-program        "gcloud compute ssh")
-	      (tramp-login-args           (("%h")))
-	      (tramp-async-args           (("-q")))
-	      (tramp-remote-shell         "/bin/sh")
-	      (tramp-remote-shell-args    ("-c"))
-	      (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-					   ("-o" "UserKnownHostsFile=/dev/null")
-					   ("-o" "StrictHostKeyChecking=no")))
-	      (tramp-default-port         22)))
 
 (defun ssh-mehmet-docker ()
  (interactive)
@@ -351,7 +353,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(minimap-font-face ((t (:height 10 :family "DejaVu Sans Mono")))))
 
 ;; indentation
 ;; Note: setq-default does not work for some reason
@@ -437,7 +439,6 @@
   ;; (projectile-ag)
   (message "projectile-ag-word"))
 
-;; Note: Run `brew install ag`. Otherwise, `helm-ag` will not work.
 (defun helm-ag-word-at-point (&optional arg)
   (interactive)
   (let ((helm-ag-insert-at-point 'symbol))
@@ -452,6 +453,27 @@
 
 ;; Ref: https://stackoverflow.com/questions/43550507/configure-jedi-not-to-auto-complete-automatically
 (setq jedi:tooltip-method nil)
+
+;; Ref: https://github.com/tkf/emacs-jedi/issues/154#issuecomment-38357854
+;; (setq jedi:environment-root (quote "/opt/conda/lib/python3.10"))
+;; (setq jedi:environment-root (quote "/Users/mehmet/Desktop/emacs-jedi-hack"))
+;; (setq jedi:environment-root (quote "/workspaces/fw-prototype"))
+;; (setq jedi:environment-root
+;;       (list (shell-command-to-string "which python")))
+
+;; (setq jedi:server-args
+;;       '("--sys-path" "/opt/conda/lib/python3.10/site-packages"
+;;	;; "--sys-path" "ROOT_DIR_2/envs/NAME_2/.../site-packages"
+;;	;; ... and more! ...
+;;	))
+
+;; (setq jedi:server-args
+;;       '("--virtual-env" "/opt/conda/lib/python3.10"
+;;	))
+
+;; set the correct virtualenv path (current one)
+;; (setq jedi:environment-virtualenv
+;;       (list (shell-command-to-string "which python")))
 
 
 ;; -------------------------------------  python-pytest  ------------------------------------- ;;
@@ -486,6 +508,19 @@
  (interactive)
  (python-pytest "--pdb"))
 
+
+;; Ref: https://github.com/wbolster/emacs-python-pytest#configuration
+;; (use-package python-pytest
+;;  :custom
+;;  (python-pytest-executable "/opt/conda/bin/python -m pytest"))
+
+;; (use-package python-pytest
+;;  :custom
+;;  (python-pytest-executable "pytest --showlocals --capture=no"))
+
+(use-package python-pytest
+ :custom
+ (python-pytest-executable "pytest -m flink --showlocals --capture=no"))
 
 ;; -------------------------------------  flycheck  ------------------------------------- ;;
 ;; Ref on configuring syntax checkers:
@@ -574,6 +609,13 @@
 ;; - https://emacs.stackexchange.com/questions/7595/how-do-i-refactor-across-a-project-in-emacs-change-method-name-everywhere
 ;; - https://github.com/ShingoFukuyama/helm-swoop
 
+;; ------------------------------------  Leetcode  ----------------------------------- ;;
+;; (add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/leetcode"))
+
+;; (use-package leetcode
+;;     :config
+;;     (setq leetcode-language "python")
+;; )
 
 ;; ------------------------------------  Window splitting  ----------------------------------- ;;
 ;; Prefer to split window vertically:
@@ -599,6 +641,128 @@
 		   (split-window-right))))))))
 
 (setq split-window-preferred-function 'my-split-window-sensibly)
+
+;; ------------------------------------  Reload file  ----------------------------------- ;;
+;; Source: https://www.emacswiki.org/emacs/misc-cmds.el
+(defun revert-buffer-no-confirm ()
+  "Revert buffer without confirmation."
+  (interactive)
+  (revert-buffer :ignore-auto :noconfirm))
+
+;; ------------------------------------  Codespaces  ----------------------------------- ;;
+;; Ref: https://github.com/patrickt/codespaces.el
+(use-package codespaces
+  :config (codespaces-setup)
+  :bind ("C-c S" . #'codespaces-connect))
+
+(setq vc-handled-backends '(Git))
+
+;; ------------------------------------  Copilot  ----------------------------------- ;;
+;; (use-package copilot
+;;   :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+;;   :ensure t)
+;; ;; you can utilize :map :hook and :config to customize copilotc
+
+;; ;; Option 1: Use copilot-mode to automatically provide completions
+;; ;; (load bootstrap-file nil 'nomessage))(add-hook 'prog-mode-hook 'copilot-mode)
+;; (add-hook 'prog-mode-hook 'copilot-mode)
+
+;; ;; Option 2: Manually provide completions
+;; ;; You need to bind copilot-complete to some key and call copilot-clear-overlay inside post-command-hook.
+
+;; (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+;; (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+
+;; Ref: https://github.com/zerolfx/copilot.el#2-configure-completion
+
+;; ------------------------------------  ChatGPT  ----------------------------------- ;;
+;; (use-package chatgpt
+;;   :straight (:host github :repo "joshcho/ChatGPT.el" :files ("dist" "*.el"))
+;;   :init
+;;   (require 'python)
+;;   (setq chatgpt-repo-path "~/.emacs.d/straight/repos/ChatGPT.el/")
+;;   :bind ("C-c q" . chatgpt-query))
+
+;; ------------------------------  scroll-up/down-half  ----------------------------- ;;
+(defun scroll-up-half ()
+  (interactive)
+  (scroll-down-command
+   (floor
+    (- (window-height)
+       next-screen-context-lines)
+    2)))
+
+(defun scroll-down-half ()
+  (interactive)
+  (scroll-up-command
+   (floor
+    (- (window-height)
+       next-screen-context-lines)
+    2)))
+
+;; Ref: https://www.reddit.com/r/emacs/comments/r7l3ar/how_do_you_scroll_half_a_page/
+(defun my-scroll-down-half-page ()
+  ;; "scroll down half a page while keeping the cursor centered"
+  (interactive)
+  (let ((ln (line-number-at-pos (point)))
+    (lmax (line-number-at-pos (point-max))))
+    (cond ((= ln 1) (move-to-window-line nil))
+      ((= ln lmax) (recenter (window-end)))
+      (t (progn
+	   (move-to-window-line -1)
+	   (recenter))))))
+
+(defun my-scroll-up-half-page ()
+  ;; "scroll up half a page while keeping the cursor centered"
+  (interactive)
+  (let ((ln (line-number-at-pos (point)))
+    (lmax (line-number-at-pos (point-max))))
+    (cond ((= ln 1) nil)
+      ((= ln lmax) (move-to-window-line nil))
+      (t (progn
+	   (move-to-window-line 0)
+	   (recenter))))))
+
+;; ------------------------------------  auto-highlight-symbol  ----------------------------------- ;;
+;; (require 'auto-highlight-symbol)
+;; (global-auto-highlight-symbol-mode)
+;; ;; (define-key auto-highlight-symbol-mode-map (kbd "M-p") 'ahs-backward)
+;; ;; (define-key auto-highlight-symbol-mode-map (kbd "M-n") 'ahs-forward)
+;; (setq ahs-idle-interval 0.2)  ;; if you want instant highlighting, set it to 0, but I find it annoying
+;; (setq ahs-default-range 'ahs-range-whole-buffer)  ;; highlight every occurence in buffer
+
+;; inhibits highlighting in specific places, like in comments
+;; (setq ahs-inhibit-face-list '(font-lock-comment-delimiter-face
+;;				font-lock-comment-face
+;;				font-lock-doc-face
+;;				font-lock-doc-string-face
+;;				font-lock-string-face))
+
+
+(setq highlight-symbol-idle-delay 1)
+(add-hook 'prog-mode-hook 'highlight-symbol-mode)
+
+;; https://www.raebear.net/computers/emacs-colors/
+;; (set-face-attribute 'highlight-symbol-face nil
+;;                     :background "lavender"
+;;                     :foreground "dark salmon")
+
+(set-face-attribute 'highlight-symbol-face nil
+		    :background "lavender"
+		    :foreground "black")
+
+(setq highlight-symbol-colors
+      '("yellow" "peach puff" "gray" "cornflower blue"
+	"deep sky blue" "DarkTurquoise" "khaki" "indian red"
+	"OliveDrab3" "LightYellow3" "salmon1" "tomato1"))
+
+;; ------------------------------------  AUXTeX  ----------------------------------- ;;
+;; https://www.gnu.org/software/auctex/manual/auctex/auctex_toc.html#SEC_Contents
+(use-package tex
+  :ensure auctex)
+
+;; ------------------------------------  Pandoc  ----------------------------------- ;;
+(straight-use-package 'pandoc)
 
 ;; ------------------------------------  Keybindings  ----------------------------------- ;;
 (straight-use-package 'find-file-in-project)
@@ -634,7 +798,6 @@
 (global-set-key (kbd "M-h") 'highlight-symbol)
 (global-set-key (kbd "<ESC> M-h") 'highlight-symbol-remove-all)
 ;; (global-set-key (kbd "M-b") 'helm-buffers-list)
-(global-set-key (kbd "M-m") 'imenu)
 (global-set-key (kbd "M-d") 'delete-window)
 (global-set-key (kbd "M-j") 'jedi:goto-definition)
 (global-set-key (kbd "M-=") 'move-text-line-up)
@@ -649,12 +812,17 @@
 (global-set-key (kbd "M-e") 'yank)
 (global-set-key (kbd "M-,") 'beginning-of-defun)
 (global-set-key (kbd "M-.") 'end-of-defun)
+(global-set-key (kbd "M-r") 'revert-buffer-no-confirm)
 ;; (global-set-key (kbd "<prior>") 'beginning-of-defun)
 ;; (global-set-key (kbd "<next>") 'end-of-defun)
 (global-set-key (kbd "<home>") 'beginning-of-defun)
 (global-set-key (kbd "<end>") 'end-of-defun)
 (global-set-key (kbd "ESC <up>") 'beginning-of-defun)
 (global-set-key (kbd "ESC <down>") 'end-of-defun)
+;; (global-set-key (kbd "ESC <left>") 'scroll-up-half)
+;; (global-set-key (kbd "ESC <right>") 'scroll-down-half)
+(global-set-key (kbd "ESC <left>") 'my-scroll-up-half-page)
+(global-set-key (kbd "ESC <right>") 'my-scroll-down-half-page)
 
 (global-set-key (kbd "\C-z") 'undo-fu-only-undo)
 (global-set-key (kbd "\C-n") 'undo-fu-only-redo)
@@ -666,7 +834,7 @@
 (global-set-key (kbd "\C-s") 'swiper)
 (global-set-key (kbd "C-_") '
   comment-or-uncomment-region)
-(global-set-key (kbd "C-j") 'jedi:complete)
+(global-set-key (kbd "M-j") 'jedi:complete)
 
 (global-set-key (kbd "M-,") 'highlight-symbol-prev)
 (global-set-key (kbd "M-.") 'highlight-symbol-next)
@@ -685,6 +853,9 @@
 
 (global-set-key "[1;10D" 'undo-fu-only-undo) ;; (kbd "M-S-<left>")
 (global-set-key "[1;10C" 'undo-fu-only-redo) ;; (kbd "M-S-<right>")
+
+;; (global-set-key (kbd "C-m") 'imenu)
+(global-set-key (kbd "M-m") 'magit-status)
 
 ;; (global-set-key (kbd "M-[") 'left-word)
 ;; (global-set-key (kbd "M-]") 'right-word)
@@ -717,3 +888,8 @@
 
 ;; (setq x-select-enable-clipboard nil)
 ;; (setq x-select-enable-primary nil)
+
+
+;; Necessary for `sshx-amarel` command to work, and yes,
+;; it needs to be placed at the end!
+;; (setq tramp-shell-prompt-pattern "$")
