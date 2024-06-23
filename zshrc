@@ -11,6 +11,7 @@ alias ls="ls -lGH"
 alias e="TERM=xterm-16color emacs"
 alias k="kubectl"
 alias m="minikube"
+alias p="pulumi"
 alias t="terraform"
 
 gr() { grep --color=always -irn -I "$1" * ;}
@@ -24,8 +25,8 @@ lint-code()
 {
   (
     isort --skip .direnv/** .
-    black --exclude=".direnv/*" .
-    flake8 --exclude=".direnv/*" .
+    black --line-length 88 --exclude=".direnv/*" .
+    flake8 --max-line-length 88 --exclude=".direnv/*" .
   )
 }
 
@@ -65,3 +66,39 @@ unset __conda_setup
 alias pyflink="pyflink-shell.sh local"
 
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# Ref: https://github.com/zsh-users/zsh-autosuggestions/issues/646#issuecomment-1011417964
+bindkey "^[[A" history-beginning-search-backward
+bindkey "^[[B" history-beginning-search-forward
+
+
+source $(direnv hook zsh)
+direnv-toggle() {
+  if [ -z "${DIRENV_DISABLE:-}" ]; then
+    unset -f _direnv_hook
+    export DIRENV_DISABLE=1
+  else
+    unset DIRENV_DISABLE
+    source $(direnv_hook_zsh)
+  fi
+}
+
+export LDFLAGS="-L/opt/homebrew/Cellar/unixodbc/2.3.12/lib $LDFLAGS"
+export CPPFLAGS="-I/opt/homebrew/Cellar/unixodbc/2.3.12/include $CPPFLAGS"
+export PKG_CONFIG_PATH="/opt/homebrew/Cellar/unixodbc/2.3.12/lib/pkgconfig $PKG_CONFIG_PATH"
+
+export LDFLAGS="-L/opt/homebrew/Cellar/msodbcsql18/18.3.2.1/lib $LDFLAGS"
+export CPPFLAGS="-I/opt/homebrew/Cellar/msodbcsql18/18.3.2.1/include $CPPFLAGS"
+export PKG_CONFIG_PATH="/opt/homebrew/Cellar/unixodbc/18.3.2.1/lib/pkgconfig $PKG_CONFIG_PATH"
+
+export LDFLAGS="-L/opt/homebrew/Cellar/freetds/1.4.12/lib $LDFLAGS"
+export CPPFLAGS="-I/opt/homebrew/Cellar/freetds/1.4.12/include $CPPFLAGS"
+export PKG_CONFIG_PATH="/opt/homebrew/Cellar/freetds/1.4.12/lib/pkgconfig $PKG_CONFIG_PATH"
+
+export LDFLAGS="-L/opt/homebrew/opt/unixodbc/lib $LDFLAGS"
+export LDFLAGS="-L/opt/homebrew/lib/libtdsodbc.so $LDFLAGS"
+
+export XDG_CONFIG_HOME="$HOME/.config/"
+
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+PATH="/Applications/CMake.app/Contents/bin":"$PATH"
