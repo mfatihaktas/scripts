@@ -82,21 +82,6 @@ direnv-toggle() {
   fi
 }
 
-export LDFLAGS="-L/opt/homebrew/Cellar/unixodbc/2.3.12/lib $LDFLAGS"
-export CPPFLAGS="-I/opt/homebrew/Cellar/unixodbc/2.3.12/include $CPPFLAGS"
-export PKG_CONFIG_PATH="/opt/homebrew/Cellar/unixodbc/2.3.12/lib/pkgconfig $PKG_CONFIG_PATH"
-
-export LDFLAGS="-L/opt/homebrew/Cellar/msodbcsql18/18.3.2.1/lib $LDFLAGS"
-export CPPFLAGS="-I/opt/homebrew/Cellar/msodbcsql18/18.3.2.1/include $CPPFLAGS"
-export PKG_CONFIG_PATH="/opt/homebrew/Cellar/unixodbc/18.3.2.1/lib/pkgconfig $PKG_CONFIG_PATH"
-
-export LDFLAGS="-L/opt/homebrew/Cellar/freetds/1.4.12/lib $LDFLAGS"
-export CPPFLAGS="-I/opt/homebrew/Cellar/freetds/1.4.12/include $CPPFLAGS"
-export PKG_CONFIG_PATH="/opt/homebrew/Cellar/freetds/1.4.12/lib/pkgconfig $PKG_CONFIG_PATH"
-
-export LDFLAGS="-L/opt/homebrew/opt/unixodbc/lib $LDFLAGS"
-export LDFLAGS="-L/opt/homebrew/lib/libtdsodbc.so $LDFLAGS"
-
 export XDG_CONFIG_HOME="$HOME/.config/"
 
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
