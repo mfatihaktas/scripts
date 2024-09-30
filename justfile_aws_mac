@@ -1,0 +1,577 @@
+# set shell := ["zsh", "-cu"]
+set dotenv-load := true
+
+CLOUD_DESKTOP := "dev-dsk-mehmettt-1d-6e42a8b6.us-east-1.amazon.com"
+
+SPARK_SBIN_DIR := "/opt/homebrew/Cellar/apache-spark/3.5.2/libexec/sbin/"
+
+CONTROLS_ENDPOINT := "https://8traq9klg4.execute-api.us-east-1.amazonaws.com/Personal"
+
+
+# list justfile recipes
+default:
+    just --list
+
+[no-cd]
+clean:
+    rm -fr .direnv
+
+[no-cd]
+env:
+    pyenv install; \
+    direnv allow
+
+[no-cd]
+install:
+    python -m pip install --upgrade pip; \
+    python -m pip install -r requirements.txt
+
+[no-cd]
+pip-install:
+    pip install . && pip install ".[dev]" && pip install ".[tests]"
+
+[no-cd]
+pip-install-requirements:
+    pip install -r requirements.txt
+
+[no-cd]
+pip-config:
+    pip config list
+
+[no-cd]
+pip-install-peru:
+    brazil-build clean
+    brazil-build
+    direnv allow
+    pip install -r requirements.txt
+    pip install -e .
+
+[no-cd]
+clean-all:
+    #!/usr/bin/env bash
+    rm -r build
+    rm -r .delegate-venv
+    rm -r .venv
+    rm -r *.egg-info
+
+[no-cd]
+pytest:
+    python -m pytest
+
+linux-distro:
+    cat /etc/*-release
+
+usermod:
+    usermod -s /bin/bash username
+
+ssh-cloud:
+    # ssh -vvv {{CLOUD_DESKTOP}}
+    # ssh -t mehmettt@{{CLOUD_DESKTOP}} "cd /home/mehmettt/oasis-cli/src/OasisCLI; zsh"
+    ssh -t mehmettt@{{CLOUD_DESKTOP}} "cd /home/mehmettt/oasis-cli/src/OasisCLI; bash"
+
+scp-cloud:
+    # scp -r ~/Desktop/workspace/config-rule-parameter-store-string mehmettt@{{CLOUD_DESKTOP}}:/home/mehmettt/workspace
+    scp ~/Desktop/justfile mehmettt@{{CLOUD_DESKTOP}}:/home/mehmettt/justfile
+
+sync-w-cloud:
+    # ninja-dev-sync -add ~/Desktop/workspaces -add-host {{CLOUD_DESKTOP}} -add-remote /home/mehmettt/workspaces -setup
+    ninja-dev-sync -add ~/Desktop/workspaces -add-host mehmettt-cloud -add-remote /home/mehmettt/workspaces -setup
+
+edit:
+    #!/usr/bin/env bash
+    remote_socket=$(
+    ssh -aknx {{CLOUD_DESKTOP}} emacs --batch --execute "(progn
+        (require 'server)
+        (princ (expand-file-name \"earth\" server-socket-dir)
+               #'external-debugging-output))")
+    echo ${remote_socket}
+
+iperf-client *address:
+    #!/usr/bin/env bash
+    if [ -z "{{ address }}" ]; then
+        address="127.0.0.1"
+    fi
+    iperf3 -f G -c ${address}
+
+# Needs to be run before ssh'ing to cloud desktop.
+mwinit:
+    mwinit -o
+
+brazil-ws-show:
+    brazil ws show
+
+[no-cd]
+brazil-ws-create:
+    # brazil ws create --name config-rule-event-bridge --versionset config-rule-event-bridge/development
+    # brazil ws create --name learn-to-use-bedrock-agent --versionset learn-to-use-bedrock-agent/development
+    # brazil ws create --name eval-event-bus-w-bedrock --versionset eval-event-bus-w-bedrock/development
+    # brazil ws create --name sechub-control-lib --versionset SecurityHubControlsLibraryAPI/mainline
+    # brazil ws create --name sechub-control-lib --versionset SecurityHubControlsLibraryAPI/mainline
+    brazil ws create --name oasis-cli --versionset OasisCLI2/dev
+
+[no-cd]
+brazil-ws-use:
+    # brazil ws use --platform AL2_x86_64
+    # brazil ws use --package GenGherkinCDK
+    # brazil ws use --package GenGherkinData
+    # brazil ws use --package SecurityHubControlsLibraryAPI
+    # brazil ws use --package SecurityHubControlsLibraryUI
+    brazil ws use --package SecurityHubControlsLibraryCDK
+
+[no-cd]
+brazil-setup-platform:
+    brazil setup platform-support
+
+brazil-ws-clean:
+    brazil ws clean && brazil ws sync --metadata
+
+brazil-java-test-single package test_class function:
+    # e.g.
+    # brazil-build single-test -DtestClass=com.amazon.bt101mehmettt.lambda.calculator.CalculatorTest -DtestMethods=WHEN_add_called_THEN_responds_correct_value
+    brazil-build single-test -DtestClass={{package}}.{{test_class}} -DtestMethods={{function}}
+
+brazil-python-test-single:
+    brazil-test-exec pytest --showlocals --capture=no --color=yes 'test/test_service_config_rule_parameter_store_string.py::ComplianceTest::test_ssm_parameter_unencrypted'
+
+brazil-build-clean:
+    brazil-build clean
+
+[no-cd]
+brazil-ws-clean-and-sync:
+  brazil ws clean && brazil ws sync -md
+
+brazil-build-diff-pipeline:
+    brazil-build diff:pipeline
+
+brazil-build-deploy-pipeline:
+    brazil-build deploy:pipeline
+
+brazil-build-server:
+    brazil-build server
+
+[no-cd]
+brazil-ws-sync:
+    brazil ws sync -md
+
+brazil-vs-clone:
+    brazil vs clone --from BT102Participant/init --to BT102Participant-${USER}/dev --bindleId $PERSONAL_BINDLE_ID --mailingList ${USER}@amazon.com
+
+brazil-add-dependency:
+    # Ref: https://builderhub.corp.amazon.com/docs/bt102-build-your-code.html#dont-be-afraid-of-brazil-version-sets
+    # 1. Add the new dependency to dependencies or test-dependencies section of the Config file of the package that’s going to be using it.
+    # 2. Merge the code into the version set
+    # $ brazil vs merge --destination VersionSetGroup/name --pmv PackageName-X.X
+    # or just simply run
+    # $ brazil ws merge
+    # If this fails with
+    # The following explicitly requested major versions do not exist in the version set 'live': ...
+    # then try running (per https://sage.amazon.dev/posts/562712?t=7)
+    # $ brazil ws merge clean
+    # 3. Update your workspace with the new revision of the version set with
+    # $ brazil ws sync -md
+
+[no-cd]
+brazil-ws-merge:
+    # brazil ws merge --package CPython311-default
+    # brazil ws merge --package CPython311-default
+    brazil ws merge --package Pytest-mock-3.x
+
+brazil-build-tasks:
+    brazil-build tasks
+
+[no-cd]
+create-package package_name:
+    create package --id empty-brazil --name {{package_name}}
+
+[no-cd]
+promote-package:
+    create package promote --primaryExportControlType none
+
+cdk-pipeline-doctor:
+    #!/usr/bin/env bash
+    temp_dir=$(mktemp -d)
+    brazil ws --create --root $temp_dir
+    pushd $temp_dir
+    brazil-bootstrap -p CDKPipelineDoctor-1.0 -vs CDKPipelineDoctor/development --root $temp_dir
+    temp_dir="$temp_dir/env/CDKPipelineDoctor-1.0-CDKPipelineDoctor-development/"
+    echo "temp_dir= ${temp_dir}"
+
+cleanup-pipeline:
+    cdk-pipeline-doctor cleanup-pipeline -a 654654188666 -p CDK-workshop-w-python-mehmettt -r admin
+
+pipeline:
+    cdk-pipeline-doctor pipeline -a 654654188666 -p CDK-workshop-w-python-mehmettt -r ReadOnly
+
+# Ref: https://builderhub.corp.amazon.com/docs/pipelines/cdk-guide/troubleshooting-bootstrap-pipeline-stack-fail-deploy.html#failed-to-create-pipeline-stack-because-some-resources-already-exist
+ls-resources:
+    #!/usr/bin/env bash
+    temp_file=$(mktemp)
+    brazil-build view:pipeline -f $temp_file
+    cat $temp_file | jq -r '.Resources[] | .Type + "\t\t" + .Properties.RoleName
+          + .Properties.BucketName + .Properties.LogGroupName
+          + .Properties.KeyName + .Properties.AliasName
+          + .Properties.RepositoryName' \
+       | perl -nle"print if m{[^\t]$}" \
+       | sort
+
+# Ref: https://builderhub.corp.amazon.com/docs/native-aws/developer-guide/hello-world-lambda-cdk-sam.html
+[no-cd]
+sam-build:
+    # sam build -t ../Config-rule-parameter-store-string-cdk/build/cdk.out/Config-rule-parameter-store-string-Service-alpha.template.json ServiceConfigRuleParameterStoreString
+    sam build -t ../Eval-event-bus-w-bedrock-cdk/build/cdk.out/eval-event-bus-w-bedrock-config-rule-stack-alpha.template.json ConfigRuleWithBedrockForEventBridge --debug
+    # sam build -t ../Eval-event-bus-w-bedrock-cdk/build/cdk.out/eval-event-bus-w-bedrock-bedrock-agent-stack-alpha.template.json BedrockAgentToEvalEventBus --debug
+
+[no-cd]
+sam-invoke:
+    # sam local invoke ConfigRuleEventBridge --event test/config_event.json --env-vars test/env_vars.json
+    sam local invoke ConfigRuleWithBedrockForEventBridge --event test/bedrock_agent_event.json --env-vars test/env_vars.json --debug
+    # sam local invoke BedrockAgentToEvalEventBus --event test/bedrock_agent_event.json --env-vars test/env_vars.json --debug
+
+# Ref: https://builderhub.corp.amazon.com/docs/hydra/cli-guide/run-integration-tests.html
+ada-credentials-update:
+    #!/usr/bin/env bash
+    ROLE="admin"
+    # ROLE="hydra-cli-role"
+
+    echo "ROLE=${ROLE}"
+    ada credentials update --provider isengard --role=${ROLE} --once --account 654654188666
+
+ada-credentials-update-amunet:
+    ada credentials update --provider isengard --role=Research --once --account 211125786781
+
+ada-credentials-update-sagemaker:
+    # ada credentials update --provider conduit --account 654654188666 --role AmazonSageMaker-ExecutionRole-20240812T151505
+    ada credentials update --provider conduit --role=AmazonSageMaker-ExecutionRole-20240812T170205 --once --account 654654188666
+
+[no-cd]
+hydra-clone-run:
+    # hydra clone --pipeline "Config-rule-parameter-store-string" --approval-step "Integration Test" --run
+    hydra clone --pipeline "config-rule-event-bridge" --approval-step "Integration Test" --run
+
+docker-bash container:
+    docker exec -it {{container}} bash
+
+# Ref: https://w.amazon.com/bin/view/BrazilPython3/FAQ/#HSeemychangeswithoutbuildingallthetime3F
+brazil-build-develop:
+    brazil-build clean && brazil-build develop
+
+describe-config-rule-evaluation-status:
+    aws configservice describe-config-rule-evaluation-status --config-rule-names rule-event-bridge --region us-west-2
+
+brazil-build-format:
+    brazil-build format
+
+# Ref: https://builderhub.corp.amazon.com/docs/bedrock/user-guide/tutorial-single-turn-qa-generate-service.html
+aws-cloudformation-describe-stacks:
+    #!/usr/bin/env bash
+    CloneName="BedrockAgent"
+    aws cloudformation describe-stacks \
+       --region us-west-2 \
+       --stack-name ${CloneName}-Service-alpha \
+       --query 'Stacks[0].Outputs[?ExportName==`${CloneName}-ApiUrl`].OutputValue' \
+       --output text | cat
+
+awscurl:
+    #!/usr/bin/env bash
+    END_POINT=""
+    REGION="us-west-2"
+    .venv/bin/awscurl ${END_POINT} \
+       --region ${REGION} \
+       --service execute-api \
+       -X POST \
+       -d '{"question": "What is the maximum size of ephemeral storage allowed by Lambda?"}'
+
+[no-cd]
+create-python-package-w-peru:
+    # create package --id python-hatch-peru --name TestModelDrivenResourceEval
+    # create package --id python-poetry-peru --name TestModelDrivenResourceEval
+    # create package --id python-hatch-peru --name GenGherkin
+    create package --id python-hatch-peru --name AuditWithBedrock
+
+mise-install:
+    mise install python@3.10.6
+
+[no-cd]
+mise-use:
+    mise use python@3.11.9
+
+[no-cd]
+bb-env-find:
+    brazil-build env find
+
+[no-cd]
+hatch-show:
+    hatch env show dev
+
+[no-cd]
+hatch-update:
+    # Update installation files in a Peru package, e.g., requirements.txt etc.
+    hatch run update
+
+[no-cd]
+source:
+    source ".hatch_venv/bin/activate"
+
+[no-cd]
+sm-ssh-ls:
+    sm-ssh list studio.sagemaker
+
+[no-cd]
+sagemaker-list-instances:
+    aws sagemaker list-notebook-instances
+
+    aws sagemaker list-apps
+
+
+setup-ssm-for-sagemaker:
+    #!/usr/bin/env bash
+
+    SAGEMAKER_ROLE_ARN="arn:aws:iam::654654188666:role/service-role/AmazonSageMaker-ExecutionRole-20240812T180013"
+    USER_ROLE_ARN="arn:aws:iam::654654188666:role/admin"
+    ACCOUNT_ID="654654188666"
+    REGION="us-west-2"
+
+    pip install 'sagemaker-ssh-helper[cdk]'
+
+    cdk bootstrap aws://"${ACCOUNT_ID}"/"${REGION}"
+
+    APP="python -m sagemaker_ssh_helper.cdk.iam_ssm_app"
+
+    AWS_REGION="${REGION}" cdk -a "${APP}" deploy SSH-IAM-SSM-Stack \
+      -c sagemaker_role="${SAGEMAKER_ROLE_ARN}" \
+      -c user_role="${USER_ROLE_ARN}"
+
+    APP="python -m sagemaker_ssh_helper.cdk.advanced_tier_app"
+
+    AWS_REGION="${REGION}" cdk -a "${APP}" deploy SSM-Advanced-Tier-Stack
+
+
+ls-java-installations:
+    ls /Library/Java/JavaVirtualMachines
+
+
+start-history-server:
+    {{SPARK_SBIN_DIR}}/./start-history-server.sh --properties-file /Users/mehmettt/Desktop/spark_history_server.conf
+
+stop-history-server:
+    {{SPARK_SBIN_DIR}}/./stop-history-server.sh
+
+start-all:
+    {{SPARK_SBIN_DIR}}/./start-all.sh
+
+[no-cd]
+zip-package:
+    # zip -vr langchain_aws.zip .hatch_venv/lib/python3.11/site-packages/langchain_aws
+    # zip -vr langchain_aws.zip langchain_aws
+    # zip -vr boto3.zip boto3
+    # zip -vr botocore.zip botocore
+
+    ## Options below with ${DIR} does NOT work.
+    # DIR="/Users/mehmettt/Desktop/workspace/eval-event-bus-w-bedrock/src/TestModelDrivenResourceEval/"
+    # zip -vr /Users/mehmettt/Desktop/test_model_driven_resource_eval.zip ${DIR} \
+    #     -x "${DIR}/.hatch_env/**\*"
+    #     # -x "${DIR}/.hatch_env/**\*" \
+    #     # -x "${DIR}/.git/**\*" \
+    #     # -x "${DIR}/.mypy_cache/**\*" \
+    #     # -x "${DIR}/.pytest_cache/**\*" \
+    #     # -x "${DIR}/build/**\*" \
+    #     # -x "${DIR}/private/**\*"
+
+    # tar --exclude=${DIR}/.hatch_env/ -zcvf /Users/mehmettt/Desktop/test_model_driven_resource_eval.tgz ${DIR}
+
+    # tar --exclude="./.hatch_env/" \
+    #     --exclude=./.git/ \
+    #     --exclude=./.mypy_cache/ \
+    #     --exclude=./.pytest_cache/ \
+    #     --exclude=./build \
+    #     -zcvf /Users/mehmettt/Desktop/test_model_driven_resource_eval.tgz .
+
+    # tar \
+    #     --exclude="./.hatch_venv/*" \
+    #     --exclude="./.git/*" \
+    #     --exclude="./.mypy_cache/*" \
+    #     --exclude="./.pytest_cache/*" \
+    #     --exclude="*/__pycache__/*" \
+    #     --exclude="./build/*" \
+    #     --exclude="./private/*" \
+    #     -zcvf /Users/mehmettt/Desktop/test_model_driven_resource_eval.tgz .
+
+    zip -vr /Users/mehmettt/Desktop/test_model_driven_resource_eval.zip . \
+        -x "./.hatch_venv/*" \
+        -x "./.git/*" \
+        -x "./.mypy_cache/*" \
+        -x "./.pytest_cache/*" \
+        -x "*/__pycache__/*" \
+        -x "./build/*" \
+        -x "./private/*" \
+
+un-zip:
+    unzip test_model_driven_resource_eval.zip -d test_model_driven_resource_eval
+    tar -xf test_model_driven_resource_eval.tgz -C test_model_driven_resource_eval --no-same-owner
+
+# Ref:
+# - https://stackoverflow.com/questions/71465805/why-is-my-pyspark-code-erroring-when-im-trying-to-access-s3-using-a-udf
+# - https://github.com/rails/rails/issues/38560
+[no-cd]
+spark-submit:
+    export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES; spark-submit app_to_test_pyspark.py --executor-memory 2G --num-executors 2
+
+aws-s3-ls:
+    aws s3 ls s3://amunet-wfsandbox-vers-binder-prod-iad-prod-us-east-1 --region us-east-1
+
+aws-s3-cp:
+    #!/usr/bin/env bash
+    # /Users/mehmettt/Downloads/boto3/doctrees/reference/services
+    DOC_DIR="/Users/mehmettt/Desktop/emacs-jedi-hack/boto3/docs/source/reference/services"
+
+    # SERVICE="ec2"
+    # SERVICE="rds"
+    # SERVICE="s3"
+    # SERVICE="mq"
+    # SERVICE="cloudfront"
+    # SERVICE="cloudtrail"
+    # SERVICE="dms"
+    # SERVICE="dynamodb"
+    # SERVICE="elb"
+
+    # aws s3 cp --recursive --region us-west-2 ${DOC_DIR}/${SERVICE}/ s3://boto-doc/${SERVICE}
+
+    for path in ${DOC_DIR}/*; do
+        [ -d "${path}" ] || continue # if not a directory, skip
+
+        echo "path= ${path}"
+        SERVICE="$(basename "${path}")"
+        echo "SERVICE= ${SERVICE}"
+
+        aws s3 cp --recursive --region us-west-2 ${path} s3://boto-doc/${SERVICE}
+    done
+
+
+
+aws-sagemaker-lifecycle-configs:
+    aws sagemaker list-studio-lifecycle-configs
+    aws sagemaker describe-studio-lifecycle-config --studio-lifecycle-config-name one-day-mehmettt-lcc-1723884579
+
+[no-cd]
+grep-requirements:
+    grep -E "==" requirements.txt > requirements_grepped.txt
+
+
+peru-ca-bootstrap:
+    peru-ca-bootstrap \
+       --bindle-id amzn1.bindle.resource.35vyrccodl4mlohunw3qze6ea \
+       --repository-name gen-gherkin \
+       --aws-profile default \
+       --create-repo
+
+cloudformation-list-types:
+    aws cloudformation list-types --visibility PUBLIC --type RESOURCE
+
+brazil-which-pytest:
+    brazil-test-exec which pytest
+
+
+bre-python:
+    bre python src/oasis_cli/cli.py
+
+
+crux:
+    cr -r CR-148478402
+
+
+brazil-vs-removemajorversions:
+    # brazil versionset removetargets --versionSet OasisCLI2/dev --majorVersions OasisCLI-1.0
+    # brazil vs removemajorversions --vs OasisCLI2/dev --majorversion AWSOverbridgeDocs-3.0
+    # brazil versionset addtargets --versionSet OasisCLI2/dev --majorVersions OasisCLI-1.0
+    brazil vs removemajorversions --vs OasisCLI2/dev
+
+
+curl-controls-api:
+    #!/usr/bin/env bash
+
+    # SPR_UUID="1"
+    # SVC_UUID="1"
+    # URI="{{CONTROLS_ENDPOINT}}/serviceproviders/${SPR_UUID}/services/${SVC_UUID}/cloudformationresources"
+    URI="{{CONTROLS_ENDPOINT}}/serviceproviders/{spr_uuid}/services/{svc_uuid}/cloudformationresources"
+    echo "URI= ${URI}"
+
+    # curl --header "Content-Type: application/json" \
+    #   --request GET \
+    #   --data '{"service":"ec2","resource":"instance"}' \
+    #   ${URI}
+
+    # awscurl --service execute-api -X GET ${URI}
+    # awscurl --service execute-api -X GET ${URI} \
+    #     --data @/Users/mehmettt/Desktop/request.json
+
+    # curl -X GET {{CONTROLS_ENDPOINT}}
+
+    aws_access_key_id=ASIAZQ3DOFR5L6PDMMZJ
+    aws_secret_access_key=2D00aLENgI89Bi4VLWjY3EzkQAHwk3u2J6SLvOBP
+
+    curl --location --request GET {{CONTROLS_ENDPOINT}} \
+    --header 'Content-Type: application/json' \
+    --user ${aws_access_key_id}:${aws_secret_access_key} \
+    --aws-sigv4 "aws:amz:us-east-1" \
+    --data-raw '{"query":"","variables":{}}'
+
+
+[no-cd]
+deploy-controls-lib:
+    #!/usr/bin/env bash
+
+    brazil-recursive-cmd -p SecurityHubControlsLibraryAPI-1.0 brazil-build release
+
+    set -e
+    brazil-recursive-cmd -p SecurityHubControlsLibraryCDK-1.0 -p SecurityHubControlsLibraryAPI-1.0 brazil-build release
+    brazil-build cdk deploy BONESBootstrap-4257357-$SECHUBCONTROLLIBRARY_PERSONAL_ACCOUNT_ID-us-east-1 --require-approval never
+    brazil-build cdk deploy --require-approval never Personal-Dynamodb-us-east-1 Personal-IAM-us-east-1 Personal-S3Stack-us-east-1 Personal-ApiGateway-us-east-1 Personal-WAF-us-east-1
+
+
+[no-cd]
+bre-pip-install:
+    # brazil-runtime-exec python -m pip install -e .
+    brazil-test-exec python -m pip install -e .
+
+
+[no-cd]
+bre-pip-uninstall:
+    brazil-runtime-exec python -m pip uninstall .
+    brazil-test-exec python -m pip uninstall .
+
+
+[no-cd]
+cd-to-model-drive-resource-eval:
+    cd /Users/mehmettt/Desktop/workspace/eval-event-bus-w-bedrock/src/TestModelDrivenResourceEval
+
+
+[no-cd]
+b-ws-clean:
+    brazil workspace clean
+
+
+[no-cd]
+oasis:
+    # brazil-runtime-exec oasis resource --service ec2 --resource instance create
+    # brazil-runtime-exec oasis resource --service ec2 create
+
+    # brazil-runtime-exec oasis resource --service ec2 update
+    # brazil-runtime-exec oasis resource --service ec2 --resource instance update
+    # brazil-runtime-exec oasis resource --service ec2 --resource "*" update
+
+    # brazil-runtime-exec oasis resource --service ec2 --resource instance list
+    brazil-runtime-exec oasis resource --service ec2 --resource "*" list
+
+
+[no-cd]
+b-ws-sync:
+    brazil ws sync -md
+
+
+[no-cd]
+bb-cdk-diff:
+    bb cdk diff Personal-WAF-us-east-1
+
+
+cd-gen-gherkin:
+    cd ~/Desktop/workspace/eval-event-bus-w-bedrock/src/TestModelDrivenResourceEval
